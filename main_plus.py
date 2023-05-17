@@ -2,6 +2,7 @@
 # Created by Revive#8798
 
 theme_name = "theme_default" # name of python theme file WITHOUT .py
+debug_mode = False
 
 from io import StringIO
 import subprocess
@@ -173,7 +174,7 @@ class FrameThread(threading.Thread):
     
     def print(self, text, row=1, col=1):
         if text == None: return
-        print(f"\x1b[{row};{col}H")
+        if not debug_mode: print(f"\x1b[{row};{col}H")
         print(fill_block(text))
 
     def set_view(self, view, clear_cache=False, data=None):

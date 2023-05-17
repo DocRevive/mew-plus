@@ -8,6 +8,9 @@ Features:
 - Terminates with Ctrl+C
 - No more screen flicker
 
+## Dependencies
+Mewt dependencies
+
 ## Setup
 1. Move all files into the mewt folder
 2. Use `start_plus.bat` instead of `start.bat`

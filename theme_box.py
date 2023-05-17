@@ -18,15 +18,6 @@ color_props = {
             "start_color": (255, 111, 163),
             "end_color": (247, 184, 207)
         }
-    },
-    "multi_color_scroll": { # gradient_scroll/gradient_change example
-        "function": "gradient_scroll", # (for gradient_change, only 'function' changes)
-        "rate_multiplier": 3, # NOT IN 'options'. multiplier > 1 means faster scroll/change
-        "options": {
-            "start_color": (50, 50, 50),
-            "end_color": (255, 255, 255),
-            "reverse": False
-        }
     }
 }
 

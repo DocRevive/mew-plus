@@ -124,7 +124,8 @@ def update_frames(precursor):
     curr_match = re.findall(frame_placeholder_regex, precursor)
     
     if len(curr_match) == 0: return False
-    for key in print_cache:
+    keys = list(print_cache.keys())
+    for key in keys:
         data = print_cache[key]
         temp = data["replacement"]
         if temp in curr_match:

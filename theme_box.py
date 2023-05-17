@@ -27,7 +27,7 @@ fps = 20
 # If minutes_per_restart is positive, the program will periodically restart every  
 # minutes_per_restart minutes. If this is negative, it will not deliberately restart.
 # Crash prevention is always enabled.
-minutes_per_restart = 1
+minutes_per_restart = 30
 
 # You can edit the template below.
 # Single brackets enclose single-line color rules i.e. [ ... ][color_prop]

@@ -41,9 +41,7 @@ minutes_per_restart = 1
 #                      Restarts, Run Time, Watching
 # Design your whitespace as if the bracket notation doesn't exist. 
 # Template starts on the line after the next line.
-template = """
-
-[[[
+template = """[[[
             ███╗   ███╗███████╗██╗    ██╗████████╗
             ████╗ ████║██╔════╝██║    ██║╚══██╔══╝
             ██╔████╔██║█████╗  ██║ █╗ ██║   ██║   

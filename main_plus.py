@@ -34,7 +34,7 @@ template = theme.template
 fps = theme.fps
 
 os.system(os_clear)
-print("Contribute: https://github.com/DocRevive/mew-plus", "Starting Mewt+, please wait...", sep="\n")
+print("Contribute: https://github.com/DocRevive/mew-plus", "Starting Mew+, please wait...", sep="\n")
 
 def enforce_length(str, length):
     int_length = int(length)
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
                 utf_line = line.rstrip().decode("utf-8")
                 cleaned_line = re.sub(color_regex, "", utf_line)
-                
+
                 if len(cleaned_line) != 0:
                     if ":" in cleaned_line:
                         split = re.split(split_regex, cleaned_line)

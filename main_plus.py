@@ -1,7 +1,9 @@
 # Up-to-date with 3.1.0
 # Created by Revive#8798
 
-theme_name = "theme_default" # name of python theme file WITHOUT .py
+theme_name = "theme_neon" # name of python theme file WITHOUT .py
+theme_enabled = False # set to False if themes are taking too long to load
+# If you disable themes, you can still use everything, including restart & bot, except for theme
 debug_mode = False
 
 from discord.ext import commands
@@ -35,6 +37,7 @@ print_cache = {}
 name_to_num = {}
 restart_trigger = False
 kill_trigger = False
+restart_reason = ""
 
 with open("settings.json", "r") as file:
     settings = json.load(file)
@@ -215,7 +218,7 @@ def list_remove(list, remove):
 
 def user_can_use_bot(user):
     whitelist = getattr(theme, "allowed_users", [])
-    return str(user.id) in whitelist or user.discriminator in whitelist
+    return str(user.id) in whitelist or str(user) in whitelist
 
 def bot_login(token, ready_event):
     intents = discord.Intents.default()
@@ -233,7 +236,7 @@ def bot_login(token, ready_event):
     )
     async def stats(ctx, *args):
         if not user_can_use_bot(ctx.message.author): return
-        if "Watching" not in name_to_num:
+        if "Watching" not in name_to_num and theme_enabled:
             await ctx.reply("Still starting up...")
             return
         
@@ -243,7 +246,10 @@ def bot_login(token, ready_event):
         embed = discord.Embed(title="Mewt Sniper Stats", color=color)
         embed.set_footer(text="mew+")
         
-        if all:
+        if not theme_enabled:
+            embed.description = "Theme disabled, metrics reduced."
+            embed.add_field(name="Restarts", value=str(name_to_num["Restarts"]))
+        elif all:
             embed.description = "\n".join(map(lambda pair : f"**{pair[0]}**: `{pair[1]}`", list(name_to_num.items())))
         else:
             embed.add_field(name="Local Thread", value=f"**Errors**: `{name_to_num['Errors']}`\n" +
@@ -304,10 +310,7 @@ def bot_login(token, ready_event):
     )
     async def watching(ctx):
         if not user_can_use_bot(ctx.message.author): return
-        if "Watching" in name_to_num:
-            await ctx.reply(", ".join(name_to_num["Watching"].split(", ")))
-        else:
-            await ctx.reply("Still starting up...")
+        await ctx.reply(", ".join(settings["ITEMS"]))
 
     @bot.command(
         brief="Restarts the program",
@@ -331,6 +334,7 @@ def bot_login(token, ready_event):
         help="To view, use without arguments. To change to 0.9, for example, use '!speed 0.9'"
     )
     async def speed(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
         if len(args) == 0:
             await ctx.reply(str(settings["MISC"]["SCAN_SPEED"]))
         else:
@@ -347,6 +351,7 @@ def bot_login(token, ready_event):
         help="To view, use without arguments. To change to 'false' (to buy watched paid items), use '!buyonlyfree false'"
     )
     async def buyonlyfree(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
         if len(args) == 0:
             await ctx.reply(str(settings["MISC"]["BUY_ONLY_FREE"]))
         else:
@@ -419,6 +424,24 @@ class FrameThread(threading.Thread):
         if self.anim_enabled: self.print(self.current_frame)
         else: self.print(self.view)
 
+def start_mewt():
+    stdout = subprocess.PIPE if theme_enabled else sys.stdout
+    return subprocess.Popen([sys.executable, "-u", "main.py"], stdout=stdout, universal_newlines=True, bufsize=1)
+
+def check_restart_loop():
+    global restart_reason
+
+    if restart_trigger or kill_trigger:
+        restart_reason = "Bot command"
+        print("Restart triggered")
+        return True
+
+    elapsed_secs = time.time() - start_time
+    if mpr > 0 and elapsed_secs > mpr * 60:
+        restart_reason = f"Restart every {mpr} minutes"
+        return True
+    
+    return False
 
 try:
     token = getattr(theme, "bot_token", False)
@@ -432,9 +455,10 @@ try:
         ready_event.wait()
         print("Logged in!")
 
+    if not theme_enabled: print("Theme disabled. Some features are not available.") 
     print("Starting Mew+, please wait...")
     mpr = getattr(theme, "minutes_per_restart", -1)
-    process = subprocess.Popen([sys.executable, "-u", "main.py"], stdout=subprocess.PIPE, universal_newlines=True, bufsize=1)
+    process = start_mewt()
     frame_thread.start()
 except (KeyboardInterrupt, SystemExit):
     print("Exiting")
@@ -446,48 +470,46 @@ while True:
     restart_trigger = False
     webhook = getattr(theme, "restart_webhook", False)
     webhook_color = getattr(theme, "webhook_color", 0xf7b8cf)
-    restart_reason = ""
-    first = True
+    stage = 0
 
     try:
         name_to_num = { "Restarts": restarts }
-        process.stdout.flush()
-        for line in process.stdout:
-            if debug_mode:
-                print(line)
-                continue
-            if restart_trigger or kill_trigger:
-                restart_reason = "Bot command"
-                print("Restart triggered")
-                break
-            restart_trigger = False
+        if theme_enabled:
+            process.stdout.flush()
+            for line in process.stdout:
+                if debug_mode:
+                    print(line)
+                    continue
+                if check_restart_loop(): break
+                if line == None: continue
+                if stage == 0:
+                    os.system(os_clear)
+                    print("Startup may take up to 3 minutes on some systems. Set theme_enabled to False in main_plus.py if this takes too long.")
+                    stage = 1
 
-            elapsed_secs = time.time() - start_time
-            if mpr > 0 and elapsed_secs > mpr * 60:
-                restart_reason = f"Restart every {mpr} minutes"
-                break
-            if line == None: continue
-            if first:
-                os.system(os_clear)
-                print("Startup may take up to 3 minutes on some systems")
-                first = False
+                utf_line = line.rstrip()
+                cleaned_line = re.sub(color_regex, "", utf_line)
 
-            utf_line = line.rstrip()
-            cleaned_line = re.sub(color_regex, "", utf_line)
-
-            if len(cleaned_line) != 0:
-                if ":" in cleaned_line:
-                    split = re.split(r"> |: ", cleaned_line)
-                    name_to_num[split[1]] = split[2]
-                if "Watching" in cleaned_line:
-                    view_precursor = generate_view(name_to_num)
-                    view_updates_since_clear += 1
-                    if view_updates_since_clear > 15:
-                        frame_thread.set_view(view_precursor, True, data=name_to_num)
-                        frame_thread.send_clear()
-                        view_updates_since_clear = 0
-                    else: frame_thread.set_view(view_precursor, False)
-        process.stdout.close()
+                if len(cleaned_line) != 0:
+                    if ":" in cleaned_line:
+                        split = re.split(r"> |: ", cleaned_line)
+                        name_to_num[split[1]] = split[2]
+                    if "Watching" in cleaned_line:
+                        if stage == 1:
+                            stage = 2
+                            os.system(os_clear)
+                        view_precursor = generate_view(name_to_num)
+                        view_updates_since_clear += 1
+                        if view_updates_since_clear > 15:
+                            frame_thread.set_view(view_precursor, True, data=name_to_num)
+                            frame_thread.send_clear()
+                            view_updates_since_clear = 0
+                        else: frame_thread.set_view(view_precursor, False)
+            process.stdout.close()
+        else:
+            while True:
+                if check_restart_loop(): break
+                time.sleep(0.1)
     except (KeyboardInterrupt, SystemExit):
         kill_trigger = True
         print("Exiting")
@@ -514,5 +536,5 @@ while True:
             "footer": { "text": "mew+" }
         }]})
     print("Restarting")
-    process = subprocess.Popen([sys.executable, "-u", "main.py"], stdout=subprocess.PIPE, universal_newlines=True, bufsize=1)
+    process = start_mewt()
     continue

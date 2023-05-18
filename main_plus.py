@@ -2,7 +2,7 @@
 # Created by Revive#8798
 
 theme_name = "theme_neon" # name of python theme file WITHOUT .py
-theme_enabled = False # set to False if themes are taking too long to load
+theme_enabled = True # set to False if themes are taking too long to load
 # If you disable themes, you can still use everything, including restart & bot, except for theme
 debug_mode = False
 

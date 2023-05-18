@@ -1,6 +1,22 @@
 # Up-to-date with 3.1.0
 # Created by Revive#8798
 
+# If minutes_per_restart is positive, the program will periodically restart every  
+# minutes_per_restart minutes. If this is negative, it will not deliberately restart.
+# Crash prevention is always enabled.
+minutes_per_restart = 30
+
+# If you put your bot's token here to customize bot messages, you must NOT put the
+# token in settings.json. 
+bot_token = ""
+embed_color = 0xfb923c # 0x and then hex color value
+allowed_users = [""] # Put the IDs or tags of the users (including you) who should be able to use the bot
+bot_prefix = "!"
+
+# Webhook to notify you, with a reason, when the bot restarts.
+restart_webhook = "https://discord.com/api/webhooks/1102739998337413301/gc7apY_ijTYOTTHTt92NGhK5qp4ARNnqtB8FovD5PuEoiFB1SdC2ZQgjXiBk-6FhE6-o"
+webhook_color = 0xf7b8cf
+
 # You can edit color_props.
 # All of the possible effects (called "function") are demonstrated below.
 # - Functions: rgbprint, gradient_print, gradient_scroll, gradient_change
@@ -23,11 +39,6 @@ color_props = {
 
 # FPS (frames per second) affects animation quality and speed, not the rate the numbers update.
 fps = 20
-
-# If minutes_per_restart is positive, the program will periodically restart every  
-# minutes_per_restart minutes. If this is negative, it will not deliberately restart.
-# Crash prevention is always enabled.
-minutes_per_restart = 30
 
 # You can edit the template below.
 # Single brackets enclose single-line color rules i.e. [ ... ][color_prop]

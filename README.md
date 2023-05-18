@@ -4,12 +4,29 @@ Themes and convenience additions
 Features:
 - Fully customizable themes
 - Solid colors, gradients, moving (animated) gradients
-- Autorestart and crash detector
+- Autorestart, crash detector, and webhook support
+- !restart command and expanded bot functionality
+- Customize bot theme
 - Terminates with Ctrl+C
 - No more screen flicker
 
 ## Dependencies
-Mewt dependencies
+Nothing other than mewt dependencies
+
+## Commands
+```
+add         Starts watching ID(s)
+addbl       Blacklists ID(s)
+buyonlyfree View or change whether to buy only free
+help        Shows this message
+remove      Stops watching ID(s)
+removebl    Un-blacklists ID(s)
+restart     Restarts the program
+speed       View or change speed
+stats       Shows status and metrics
+stats all   Shows all data
+watching    Shows the list of item IDs
+```
 
 ## Setup
 1. Move all files into the mewt folder

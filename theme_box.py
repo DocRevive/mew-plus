@@ -7,13 +7,13 @@
 minutes_per_restart = 30
 
 # If you put your bot's token here to customize bot messages, you must NOT put the
-# token in settings.json. 
+# token in settings.json. (All optional)
 bot_token = ""
-embed_color = 0xfb923c # 0x and then hex color value
+embed_color = 0xf7b8cf # 0x and then hex color value
 allowed_users = [""] # Put the IDs or tags of the users (including you) who should be able to use the bot
 bot_prefix = "!"
 
-# Webhook to notify you, with a reason, when the bot restarts.
+# Webhook to notify you, with a reason, when the bot restarts. (Optional)
 restart_webhook = ""
 webhook_color = 0xf7b8cf
 

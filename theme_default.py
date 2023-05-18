@@ -14,7 +14,7 @@ allowed_users = [""] # Put the IDs or tags of the users (including you) who shou
 bot_prefix = "!"
 
 # Webhook to notify you, with a reason, when the bot restarts.
-restart_webhook = "https://discord.com/api/webhooks/1102739998337413301/gc7apY_ijTYOTTHTt92NGhK5qp4ARNnqtB8FovD5PuEoiFB1SdC2ZQgjXiBk-6FhE6-o"
+restart_webhook = ""
 webhook_color = 0xf7b8cf
 
 # You can edit color_props.

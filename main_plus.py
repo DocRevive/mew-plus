@@ -1,12 +1,13 @@
 # Up-to-date with 3.1.0
 # Created by Revive#8798
 
-theme_name = "theme_default" # name of python theme file WITHOUT .py
+config_name = "config_default" # name of mew+ config file WITHOUT .py
 theme_enabled = True # set to False if themes are taking too long to load
 # If you disable themes, you can still use everything, including restart & bot, except for theme
 debug_mode = False
 
 from discord.ext import commands
+from datetime import datetime
 from io import StringIO
 import subprocess
 import threading
@@ -29,15 +30,47 @@ block_regex = re.compile(r"(?<!\x1b)\[\[\[(.*?)\]\]\]\[(.*?)\]", flags=re.DOTALL
 frame_placeholder_regex = re.compile(r"\[\|\[\(.*?\)\]\|\]", flags=re.DOTALL)
 os_clear = "cls" if os.name == "nt" else "clear"
 
-theme = importlib.import_module(theme_name)
-color_props = getattr(theme, "color_props", {})
+config = importlib.import_module(config_name)
+color_props = getattr(config, "color_props", {})
 
-restarts = 0
 print_cache = {}
 name_to_num = {}
-restart_trigger = False
 kill_trigger = False
-restart_reason = ""
+user_id = getattr(config, "roblox_id", None)
+
+restarts = {
+    "count": 0,
+    "trigger": False,
+    "reason": ""
+}
+
+serials = {
+    "last_bought_needs_update": False,
+    "update_trigger": False,
+    "last_updated": False,
+    "error": None,
+    "status": None,
+    "inventory_cache": []
+}
+
+type_to_id = {
+    "Hat": 8,
+    "HairAccessory": 41,
+    "FaceAccessory": 42,
+    "NeckAccessory": 43,
+    "ShoulderAccessory": 44,
+    "FrontAccessory": 45,
+    "BackAccessory": 46,
+    "WaistAccessory": 47,
+    "TShirtAccessory": 64,
+    "ShirtAccessory": 65,
+    "PantsAccessory": 66,
+    "JacketAccessory": 67,
+    "SweaterAccessory": 68,
+    "ShortsAccessory": 69,
+}
+
+types = ",".join(list(type_to_id.keys()))
 
 with open("settings.json", "r") as file:
     settings = json.load(file)
@@ -60,7 +93,7 @@ processing_funcs = {
 }
 
 def generate_view(data):
-    result = getattr(theme, "template", "")
+    result = getattr(config, "template", "")
     for prop in data:
         result = re.sub(r"\{\{" + prop + r"\}\}", str(data[prop]), result)
 
@@ -72,7 +105,10 @@ def generate_view(data):
     for regex in regex_list:
         curr_match = re.search(regex, result)
         while curr_match != None:
-            if curr_match[0] not in print_cache:
+            if curr_match[0] in print_cache:
+                str_output = print_cache[curr_match[0]]["replacement"]
+                print_cache[curr_match[0]]["last_use"] = data["Run Time"]
+            else:
                 content = curr_match[1]
                 args = re.split(r"\|", curr_match[2])
                 color_prop = args[0]
@@ -120,9 +156,6 @@ def generate_view(data):
                         "replacement": str_output,
                         "last_use": data["Run Time"]
                     }
-            else: 
-                str_output = print_cache[curr_match[0]]["replacement"]
-                print_cache[curr_match[0]]["last_use"] = data["Run Time"]
             result = re.sub(regex, str_output, result, 1)
             curr_match = re.search(regex, result)
     sys.stdout = real_stdout
@@ -167,7 +200,145 @@ def update_settings(new_data):
         return True
     except Exception as e:
         return (False, str(e))
+
+def get_request(url, timeout=4, cursor=None):
+    try:
+        response = requests.get(url if cursor == None else url + f"&cursor={cursor}", timeout=timeout,
+                                cookies={ ".ROBLOSECURITY": settings["MAIN_COOKIE"]})
+    except Exception as e:
+        serials["error"] = str(e)
+        print("Couldn't update inventory:", serials["error"])
+        return False
     
+    serials["error"] = None
+    return response.json()
+
+def update_serial_status(message, print_msg):
+    if print_msg: print(message)
+    serials["status"] = message
+
+def populate_inventory_cache(wait=2, max_retry=3, print=False):
+    overall_inv_url = f"https://inventory.roblox.com/v2/users/{user_id}/inventory?assetTypes={types}&filterDisapprovedAssets=false&limit=100&sortOrder=Desc"
+    type_to_oldest = {}
+    item_counts = {}
+    cursor = None
+    retry_count = 0
+
+    if len(serials["inventory_cache"]) == 0:
+        count = 0
+        iters = int(getattr(config, "cache_num", 100) / 100)
+        update_serial_status(f"Populating cache with the last {iters * 100} inventory items", print)
+
+        while count < iters:
+            response = get_request(overall_inv_url, cursor=cursor)
+            time.sleep(wait)
+            if not response:
+                retry_count += 1
+                if retry_count <= max_retry:
+                    update_serial_status(serials["error"] + ". Retrying", print)
+                    continue
+                else:
+                    update_serial_status("Too many retries", print)
+                    return False
+            cursor = response["nextPageCursor"]
+            data = response["data"]
+
+            for item in data:
+                this_seconds = datetime.fromisoformat(item["created"]).timestamp()
+                type_name = item["assetType"]
+                asset_id = item["assetId"]
+
+                if asset_id in item_counts: item_counts[asset_id] += 1
+                else: item_counts[asset_id] = 1
+                if type_name not in type_to_oldest or this_seconds < type_to_oldest[type_name][0]:
+                    type_to_oldest[type_name] = [this_seconds, asset_id]
+
+            count += 1
+            if cursor == None: break
+    else:
+        resolved = False
+        update_serial_status("Updating inventory cache with new items", print)
+
+        while not resolved:
+            response = get_request(overall_inv_url, cursor=cursor)
+            time.sleep(wait)
+            if not response:
+                retry_count += 1
+                if retry_count <= max_retry:
+                    update_serial_status(serials["error"] + ". Retrying", print)
+                    continue
+                else:
+                    update_serial_status("Too many retries", print)
+                    return False
+            current_recent = serials["inventory_cache"][0]["created_timestamp"]
+            cursor = response["nextPageCursor"]
+            data = response["data"]
+
+            for item in data:
+                this_seconds = datetime.fromisoformat(item["created"]).timestamp()
+                if this_seconds <= current_recent:
+                    resolved = True
+                    break
+                type_name = item["assetType"]
+                asset_id = item["assetId"]
+
+                if asset_id in item_counts: item_counts[asset_id] += 1
+                else: item_counts[asset_id] = 1
+                if type_name not in type_to_oldest or this_seconds < type_to_oldest[type_name][0]:
+                    type_to_oldest[type_name] = [this_seconds, asset_id]
+
+            if cursor == None: resolved = True
+    
+    to_add = []
+    for type_name, oldest in type_to_oldest.items():
+        type_id = type_to_id[type_name]
+        url = f"https://inventory.roblox.com/v2/users/{user_id}/inventory/{type_id}?limit=100&sortOrder=Desc"
+        cursor = None
+        resolved = False
+        retry_count = 0
+        update_serial_status(f"Getting new {type_name}", print)
+
+        while not resolved:
+            response = get_request(url, cursor=cursor)
+            time.sleep(wait)
+            if not response:
+                retry_count += 1
+                if retry_count <= max_retry:
+                    update_serial_status(serials["error"] + ". Retrying", print)
+                    continue
+                else:
+                    update_serial_status("Too many retries", print)
+                    return False
+            cursor = response["nextPageCursor"]
+            data = response["data"]
+            curr_count = 0
+            end_count = item_counts[oldest[1]]
+
+            for item in data:
+                this_seconds = datetime.fromisoformat(item["created"]).timestamp()
+                serial = item["serialNumber"] if "serialNumber" in item else "none"
+                if item["assetId"] == oldest[1]:
+                    curr_count += 1
+                    if curr_count == end_count:
+                        resolved = True
+                        break
+                if item["collectibleItemId"] != None:
+                    to_add.append({
+                            "asset_id": item["assetId"],
+                            "asset_name": item["assetName"],
+                            "serial": serial,
+                            "created_timestamp": this_seconds
+                        })
+
+            if cursor == None: resolved = True
+
+    to_add.sort(key=lambda obj : obj["created_timestamp"], reverse=True)
+    serials["inventory_cache"] = to_add + serials["inventory_cache"]
+
+    update_serial_status("Finished updating", print)
+    serials["last_updated"] = time.time()
+    return True
+
 def list_add(list, new):
     added = []
     not_added = []
@@ -189,7 +360,7 @@ def list_add(list, new):
     if len(already_added) > 0: result += "Already watching `" + "`, `".join(already_added) + "`. "
     if len(not_added) > 0: result += "Couldn't add `" + "`, `".join(not_added) + "`."
     if result == "": result = "Nothing happened."
-    else: result += "Use !restart to put changes into effect"
+    elif len(added) > 0: result += "Use !restart to put changes into effect"
     return result
 
 def list_remove(list, remove):
@@ -213,17 +384,17 @@ def list_remove(list, remove):
     if len(not_watching) > 0: result += "Wasn't watching `" + "`, `".join(not_watching) + "`. "
     if len(not_removed) > 0: result += "Couldn't remove `" + "`, `".join(not_removed) + "`. "
     if result == "": result = "Nothing happened."
-    else: result += "Use !restart to put changes into effect"
+    elif len(removed) > 0: result += "Use !restart to put changes into effect"
     return result
 
 def user_can_use_bot(user):
-    whitelist = getattr(theme, "allowed_users", [])
+    whitelist = getattr(config, "allowed_users", [])
     return str(user.id) in whitelist or str(user) in whitelist
 
 def bot_login(token, ready_event):
     intents = discord.Intents.default()
     intents.message_content = True
-    bot = commands.Bot(command_prefix=getattr(theme, "bot_prefix", "!"),
+    bot = commands.Bot(command_prefix=getattr(config, "bot_prefix", "!"),
                        intents=intents)
 
     @bot.event
@@ -241,7 +412,7 @@ def bot_login(token, ready_event):
             return
         
         all = False
-        color = getattr(theme, "embed_color", 0xf7b8cf)
+        color = getattr(config, "embed_color", 0xf7b8cf)
         if len(args) > 0: all = args[0].lower() == "all"
         embed = discord.Embed(title="Mewt Sniper Stats", color=color)
         embed.set_footer(text="mew+")
@@ -259,6 +430,62 @@ def bot_login(token, ready_event):
             embed.add_field(name="Bought", value=f"`{name_to_num['Bought']}`")
 
         await ctx.reply(embed=embed)
+
+    @bot.command(
+        brief="Lists your limiteds and serials",
+        help="Lists main account's limiteds and their serials, recent first. Updates automatically whenever mewt is buying something. Manually update with !updateinv. !inventory <page number> to go to a certain page, e.g. !inventory 2"
+    )
+    async def inventory(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
+        cache = serials["inventory_cache"]
+        if not user_id:
+            await ctx.reply("You need to set roblox_id in the config file you're using.")
+            return
+        if len(cache) == 0:
+            await ctx.reply("Still starting up...")
+            return
+
+        color = getattr(config, "embed_color", 0xf7b8cf)
+        page = 1
+        max_page = (len(cache) / 10).__ceil__()
+        if len(args) > 0:
+            if not args[0].isnumeric():
+                await ctx.reply("Page must be a number.")
+                return
+            if int(args[0]) > max_page:
+                await ctx.reply(f"Currently, the last page is {max_page}")
+                return
+            page = int(args[0])
+        embed = discord.Embed(title="Limited Inventory", color=color)
+        embed.set_footer(text=f"mew+ | Page {page}/{max_page}")
+
+        desc = f"Total cached: {len(cache)}\n"
+        if serials["last_bought_needs_update"] != False or serials["update_trigger"]:
+            if serials["last_bought_needs_update"] != False: desc += f"Items bought <t:{int(serials['last_bought_needs_update'])}:R>, awaiting update...\n"
+            elif serials["update_trigger"]: desc += "Update triggered, awaiting update...\n"
+            desc += f"Status: {serials['status']}\n"
+            desc += f"Errors: {serials['error'] if serials['error'] != None else 'none'}\n"
+        desc += f"Last updated: <t:{int(serials['last_updated'])}:R>\n\n"
+        
+        page_list = cache[(page - 1) * 10 : page * 10]
+        for item in page_list:
+            desc += f"[{item['asset_name']}](https://roblox.com/catalog/{item['asset_id']})\n"
+            desc += f"`#{item['serial']}` | <t:{int(item['created_timestamp'])}:R>\n\n"
+
+        embed.description = desc[:4000]
+
+        await ctx.reply(embed=embed)
+
+    @bot.command(
+        brief="Inventory already auto-updates, but you can use this too"
+    )
+    async def updateinv(ctx):
+        if not user_can_use_bot(ctx.message.author): return
+        if serials["update_trigger"] or serials["last_bought_needs_update"]:
+            await ctx.reply("Update already underway!")
+            return    
+        await ctx.reply("Starting update. Monitor progress with the inventory command")
+        serials["update_trigger"] = True
 
     @bot.command(
         brief="Starts watching ID(s)",
@@ -310,21 +537,22 @@ def bot_login(token, ready_event):
     )
     async def watching(ctx):
         if not user_can_use_bot(ctx.message.author): return
-        await ctx.reply(", ".join(settings["ITEMS"]))
+        if len(settings["ITEMS"]) == 0:
+            await ctx.reply("No items watched")
+            return
+        await ctx.reply(", ".join(map(str, settings["ITEMS"])))
 
     @bot.command(
         brief="Restarts the program",
         help="Restarts the program and indicates success or failure"
     )
     async def restart(ctx):
-        global restart_trigger
-
         if not user_can_use_bot(ctx.message.author): return
         msg = await ctx.reply("Restarting...")
-        restart_trigger = True
+        restarts["trigger"] = True
         for _ in range(100):
             time.sleep(0.5)
-            if not restart_trigger:
+            if not restarts["trigger"]:
                 await msg.edit(content="Restarted!")
                 return
         await msg.edit(content="Couldn't detect restart after 50 seconds.")
@@ -394,7 +622,7 @@ class FrameThread(threading.Thread):
                 self.in_progress = False
                 self.print(self.view)
                 break
-            time.sleep(1 / getattr(theme, "fps", 5))
+            time.sleep(1 / getattr(config, "fps", 5))
             self.print(view_frame)
             self.current_frame = view_frame
             self.in_progress = False
@@ -428,36 +656,50 @@ def start_mewt():
     stdout = subprocess.PIPE if theme_enabled else sys.stdout
     return subprocess.Popen([sys.executable, "-u", "main.py"], stdout=stdout, universal_newlines=True, bufsize=1)
 
-def check_restart_loop():
-    global restart_reason
-
-    if restart_trigger or kill_trigger:
-        restart_reason = "Bot command"
+def check_restart(current_time):
+    if restarts["trigger"] or kill_trigger:
+        restarts["reason"] = "Bot command"
         print("Restart triggered")
         return True
 
-    elapsed_secs = time.time() - start_time
+    elapsed_secs = current_time - start_time
     if mpr > 0 and elapsed_secs > mpr * 60:
-        restart_reason = f"Restart every {mpr} minutes"
+        restarts["reason"] = f"Restart every {mpr} minutes"
         return True
     
     return False
 
+def check_inventory_loop():
+    while True:
+        if not serials["last_bought_needs_update"] and not serials["update_trigger"]: continue
+        if time.time() - serials["last_bought_needs_update"] > 5 or serials["update_trigger"]:
+            populate_inventory_cache()
+            serials["last_bought_needs_update"] = False
+            serials["update_trigger"] = False
+        time.sleep(0.5)
+
 try:
-    token = getattr(theme, "bot_token", False)
+    token = getattr(config, "bot_token", False)
     frame_thread = FrameThread()
 
     if token:
         ready_event = threading.Event()
-        main_thread = threading.Thread(target=bot_login, args=[token, ready_event], daemon=True)
+        bot_thread = threading.Thread(target=bot_login, args=[token, ready_event], daemon=True)
         print("Logging into bot...")
-        main_thread.start()
+        bot_thread.start()
         ready_event.wait()
         print("Logged in!")
 
-    if not theme_enabled: print("Theme disabled. Some features are not available.") 
+    if not theme_enabled: print("Theme disabled. Some features are not available.")
+    if not user_id: print("Roblox ID not set; !serials command not available")
+    else:
+        print("Fetching inventory data, please wait...")
+        populate_inventory_cache(wait=1, max_retry=8, print=True)
+        serials_thread = threading.Thread(target=check_inventory_loop, daemon=True)
+        serials_thread.start()
+
     print("Starting Mew+, please wait...")
-    mpr = getattr(theme, "minutes_per_restart", -1)
+    mpr = getattr(config, "minutes_per_restart", -1)
     process = start_mewt()
     frame_thread.start()
 except (KeyboardInterrupt, SystemExit):
@@ -467,20 +709,21 @@ except (KeyboardInterrupt, SystemExit):
 while True:
     start_time = time.time()
     view_updates_since_clear = 0
-    restart_trigger = False
-    webhook = getattr(theme, "restart_webhook", False)
-    webhook_color = getattr(theme, "webhook_color", 0xf7b8cf)
+    restarts["trigger"] = False
+    webhook = getattr(config, "restart_webhook", False)
+    webhook_color = getattr(config, "webhook_color", 0xf7b8cf)
     stage = 0
 
     try:
-        name_to_num = { "Restarts": restarts }
+        name_to_num = { "Restarts": restarts["count"] }
         if theme_enabled:
             process.stdout.flush()
             for line in process.stdout:
                 if debug_mode:
                     print(line)
                     continue
-                if check_restart_loop(): break
+                current_time = time.time()
+                if check_restart(current_time): break
                 if line == None: continue
                 if stage == 0:
                     os.system(os_clear)
@@ -491,9 +734,14 @@ while True:
                 cleaned_line = re.sub(color_regex, "", utf_line)
 
                 if len(cleaned_line) != 0:
+                    if "Buying" in cleaned_line:
+                        print(cleaned_line)
+                        serials["last_bought_needs_update"] = current_time
+                        continue
                     if ":" in cleaned_line:
                         split = re.split(r"> |: ", cleaned_line)
-                        name_to_num[split[1]] = split[2]
+                        if len(split) == 3: name_to_num[split[1]] = split[2]
+                    if "Current User" in cleaned_line: continue
                     if "Watching" in cleaned_line:
                         if stage == 1:
                             stage = 2
@@ -508,7 +756,8 @@ while True:
             process.stdout.close()
         else:
             while True:
-                if check_restart_loop(): break
+                current_time = time.time()
+                if check_restart(current_time): break
                 time.sleep(0.1)
     except (KeyboardInterrupt, SystemExit):
         kill_trigger = True
@@ -518,23 +767,26 @@ while True:
         os.system("pause")
     except Exception as e:
         print(e)
-        restart_reason = str(e)
+        restarts["reason"] = str(e)
         pass
 
     process.kill()
     if kill_trigger: break
 
-    restarts += 1
+    restarts["count"] += 1
     
     if webhook:
         print("Sending webhook")
-        requests.post(webhook, json={"content": None, "embeds": [{
-            "color": webhook_color,
-            "title": "Mewt restarted",
-            "fields": [ {"name": "Reason", "value": restart_reason, "inline": True},
-                       {"name": "Restart count", "value": restarts, "inline": True} ],
-            "footer": { "text": "mew+" }
-        }]})
+        try:
+            requests.post(webhook, timeout=4, json={"content": None, "embeds": [{
+                "color": webhook_color,
+                "title": "Mewt restarted",
+                "fields": [ {"name": "Reason", "value": restarts["reason"], "inline": True},
+                        {"name": "Restart count", "value": restarts["count"], "inline": True} ],
+                "footer": { "text": "mew+" }
+            }]})
+        except Exception as e:
+            print("Couldn't send webhook:", e)
     print("Restarting")
     process = start_mewt()
     continue

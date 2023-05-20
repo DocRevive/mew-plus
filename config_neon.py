@@ -9,9 +9,11 @@ minutes_per_restart = 30
 # If you put your bot's token here to customize bot messages, you must NOT put the
 # token in settings.json. (All optional)
 bot_token = ""
-embed_color = 0xA653F5 # 0x and then hex color value
-allowed_users = [""] # Put the IDs or tags of the users (including you) who should be able to use the bot
-bot_prefix = "!"
+allowed_users = [""]    # Put the discord IDs or tags of the users (including you) who can use the bot
+roblox_id = ""          # The roblox ID of your main account (for !serials command)
+embed_color = 0xA653F5  # 0x and then hex color value
+bot_prefix = "!"        # Goes before every command
+cache_num = 100         # A multiple of 100; number of inventory acccessories to fetch initially. Not necessarily number of limiteds.
 
 # Webhook to notify you, with a reason, when the bot restarts. (Optional)
 restart_webhook = ""

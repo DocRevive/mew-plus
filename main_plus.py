@@ -315,7 +315,6 @@ def populate_inventory_cache(wait=2, max_retry=3, print=False):
             end_count = item_counts[oldest[1]]
 
             for item in data:
-                this_seconds = datetime.fromisoformat(item["created"]).timestamp()
                 serial = item["serialNumber"] if "serialNumber" in item else "none"
                 if item["assetId"] == oldest[1]:
                     curr_count += 1
@@ -323,6 +322,7 @@ def populate_inventory_cache(wait=2, max_retry=3, print=False):
                         resolved = True
                         break
                 if item["collectibleItemId"] != None:
+                    this_seconds = datetime.fromisoformat(item["created"]).timestamp()
                     to_add.append({
                             "asset_id": item["assetId"],
                             "asset_name": item["assetName"],

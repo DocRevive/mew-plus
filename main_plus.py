@@ -37,6 +37,7 @@ print_cache = {}
 name_to_num = {}
 kill_trigger = False
 user_id = getattr(config, "roblox_id", None)
+whitelist = getattr(config, "allowed_users", [])
 
 restarts = {
     "count": 0,
@@ -388,7 +389,6 @@ def list_remove(list, remove):
     return result
 
 def user_can_use_bot(user):
-    whitelist = getattr(config, "allowed_users", [])
     return str(user.id) in whitelist or str(user) in whitelist
 
 def bot_login(token, ready_event):
@@ -689,11 +689,13 @@ try:
         bot_thread.start()
         ready_event.wait()
         print("Logged in!")
+        if len(whitelist) == 0: print("WARNING: you need to add your discord ID to allowed_users")
 
     if not theme_enabled: print("Theme disabled. Some features are not available.")
     if not user_id: print("Roblox ID not set; !serials command not available")
+    elif not token: print("Bot token not set; !serials command not available")
     else:
-        print("Fetching inventory data, please wait...")
+        print("Fetching inventory data, please wait... (one-time setup; restarting remains fast)")
         populate_inventory_cache(wait=1, max_retry=8, print=True)
         serials_thread = threading.Thread(target=check_inventory_loop, daemon=True)
         serials_thread.start()
@@ -702,6 +704,7 @@ try:
     mpr = getattr(config, "minutes_per_restart", -1)
     process = start_mewt()
     frame_thread.start()
+    time.sleep(2)
 except (KeyboardInterrupt, SystemExit):
     print("Exiting")
     sys.exit(1)

@@ -45,11 +45,11 @@ watching    Shows the list of item IDs
 
 config_neon
 
-![theme_neon](https://i.imgur.com/nrLZ0Fp.png)
+![config_neon](https://i.imgur.com/nrLZ0Fp.png)
 
 config_box
 
-![theme_box](https://i.imgur.com/XqcBXeL.png)
+![config_box](https://i.imgur.com/XqcBXeL.png)
 
 Go to `config_default.py` and make your own!
 

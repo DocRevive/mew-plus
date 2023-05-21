@@ -689,7 +689,7 @@ try:
         bot_thread.start()
         ready_event.wait()
         print("Logged in!")
-        if len(whitelist) == 0: print("WARNING: you need to add your discord ID to allowed_users")
+        if len(list(filter(None, whitelist))) == 0: print("WARNING: you need to add your discord ID to allowed_users")
 
     if not theme_enabled: print("Theme disabled. Some features are not available.")
     if not user_id: print("Roblox ID not set; !serials command not available")

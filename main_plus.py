@@ -42,7 +42,8 @@ whitelist = getattr(config, "allowed_users", [])
 restarts = {
     "count": 0,
     "trigger": False,
-    "reason": ""
+    "reason": "",
+    "last_restart": 0
 }
 
 serials = {
@@ -210,9 +211,14 @@ def get_request(url, timeout=4, cursor=None):
         serials["error"] = str(e)
         print("Couldn't update inventory:", serials["error"])
         return False
-    
-    serials["error"] = None
-    return response.json()
+
+    json = response.json()
+    if "nextPageCursor" in json:
+        serials["error"] = None
+        return json
+    else:
+        serials["error"] = str(json)
+        return False
 
 def update_serial_status(message, print_msg):
     if print_msg: print(message)
@@ -241,10 +247,6 @@ def populate_inventory_cache(wait=2, max_retry=3, print=False):
                 else:
                     update_serial_status("Too many retries", print)
                     return False
-            if "nextPageCursor" not in response:
-                update_serial_status("Got an error; ensure your MAIN_COOKIE is valid and the roblox_id corresponds with the account of the cookie", print)
-                update_serial_status(response, print)
-                return False
             cursor = response["nextPageCursor"]
             data = response["data"]
 
@@ -312,8 +314,8 @@ def populate_inventory_cache(wait=2, max_retry=3, print=False):
                     update_serial_status(serials["error"] + ". Retrying", print)
                     continue
                 else:
-                    update_serial_status("Too many retries", print)
-                    return False
+                    update_serial_status(f"Couldn't get {type_name}", print)
+                    break
             cursor = response["nextPageCursor"]
             data = response["data"]
             curr_count = 0
@@ -701,7 +703,9 @@ try:
     elif not token: print("Bot token not set; !serials command not available")
     else:
         print("Fetching inventory data, please wait... (one-time setup; restarting remains fast)")
-        populate_inventory_cache(wait=1, max_retry=8, print=True)
+        if not populate_inventory_cache(wait=1, max_retry=8, print=True):
+            print("Got an error; ensure your MAIN_COOKIE is valid and the roblox_id corresponds with the account of the cookie")
+            sys.exit(1)
         serials_thread = threading.Thread(target=check_inventory_loop, daemon=True)
         serials_thread.start()
 
@@ -715,9 +719,10 @@ except (KeyboardInterrupt, SystemExit):
     sys.exit(1)
 
 while True:
-    start_time = time.time()
     view_updates_since_clear = 0
+    start_time = time.time()
     restarts["trigger"] = False
+    restarts["last_restart"] = start_time
     webhook = getattr(config, "restart_webhook", False)
     webhook_color = getattr(config, "webhook_color", 0xf7b8cf)
     stage = 0
@@ -779,12 +784,15 @@ while True:
     except Exception as e:
         print(e)
         restarts["reason"] = str(e)
-        pass
 
     process.kill()
     if kill_trigger: break
 
     restarts["count"] += 1
+    if time.time() - restarts["last_restart"] < 5:
+        print("Restarting too fast; waiting 5 seconds. Ctrl+C to exit")
+        time.sleep(5)
+    restarts["last_restart"] = time.time()
     
     if webhook:
         print("Sending webhook")

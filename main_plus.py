@@ -1,4 +1,4 @@
-# Up-to-date with 3.1.0
+# Up-to-date with 3.5.1
 # Created by Revive#8798
 
 config_name = "config_default" # name of mew+ config file WITHOUT .py
@@ -241,6 +241,10 @@ def populate_inventory_cache(wait=2, max_retry=3, print=False):
                 else:
                     update_serial_status("Too many retries", print)
                     return False
+            if "nextPageCursor" not in response:
+                update_serial_status("Got an error; ensure your MAIN_COOKIE is valid and the roblox_id corresponds with the account of the cookie", print)
+                update_serial_status(response, print)
+                return False
             cursor = response["nextPageCursor"]
             data = response["data"]
 
@@ -671,6 +675,7 @@ def check_restart(current_time):
 
 def check_inventory_loop():
     while True:
+        if kill_trigger: break
         if not serials["last_bought_needs_update"] and not serials["update_trigger"]: continue
         if time.time() - serials["last_bought_needs_update"] > 5 or serials["update_trigger"]:
             populate_inventory_cache()
@@ -730,7 +735,7 @@ while True:
                 if line == None: continue
                 if stage == 0:
                     os.system(os_clear)
-                    print("Startup may take up to 3 minutes on some systems. Set theme_enabled to False in main_plus.py if this takes too long.")
+                    if theme_enabled: print("Startup may take up to 3 minutes on some systems. Set theme_enabled to False in main_plus.py if this takes too long -- there may be a hidden error message.")
                     stage = 1
 
                 utf_line = line.rstrip()
@@ -740,6 +745,9 @@ while True:
                     if "Buying" in cleaned_line:
                         print(cleaned_line)
                         serials["last_bought_needs_update"] = current_time
+                        continue
+                    if "Invalid" in cleaned_line:
+                        print(cleaned_line)
                         continue
                     if ":" in cleaned_line:
                         split = re.split(r"> |: ", cleaned_line)

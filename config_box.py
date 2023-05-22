@@ -1,4 +1,4 @@
-# Up-to-date with 3.1.0
+# Up-to-date with 3.5.1
 # Created by Revive#8798
 
 # If minutes_per_restart is positive, the program will periodically restart every  

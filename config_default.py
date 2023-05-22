@@ -15,6 +15,10 @@ embed_color = 0xf7b8cf  # 0x and then hex color value
 bot_prefix = "!"        # Goes before every command
 cache_num = 100         # A multiple of 100; number of inventory acccessories to fetch initially. Not necessarily number of limiteds.
 
+# Roblox-provided times may be a few hours behind or ahead. Use time_offset_minutes if you find that recent !inventory item dates are off.
+# Use a positive number if the current times are some number of minutes behind, and a negative number if the current times are ahead.
+time_offset_minutes = 60
+
 # Webhook to notify you, with a reason, when the bot restarts. (Optional)
 restart_webhook = ""
 webhook_color = 0xf7b8cf

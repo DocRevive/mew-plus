@@ -476,7 +476,7 @@ def bot_login(token, ready_event):
         page_list = cache[(page - 1) * 10 : page * 10]
         for item in page_list:
             desc += f"[{item['asset_name']}](https://roblox.com/catalog/{item['asset_id']})\n"
-            desc += f"`#{item['serial']}` | <t:{int(item['created_timestamp'])}:R>\n\n"
+            desc += f"`#{item['serial']}` | <t:{int(item['created_timestamp']) + getattr(config, 'time_offset_minutes', 0) * 60}:R>\n\n"
 
         embed.description = desc[:4000]
 

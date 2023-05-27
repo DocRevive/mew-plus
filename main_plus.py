@@ -1,4 +1,4 @@
-# Up-to-date with 3.5.1
+# Up-to-date with 3.5.6
 # Created by Revive#8798
 
 config_name = "config_default" # name of mew+ config file WITHOUT .py
@@ -81,17 +81,36 @@ os.system(os_clear)
 print("Contribute: https://github.com/DocRevive/mew-plus")
 
 def enforce_length(str, length):
-    int_length = int(length)
-    if int_length != int_length: return str
-    if len(str) == int_length:
-        return str
-    elif len(str) > int_length:
-        return str[:int_length]
-    else:
-        return str.ljust(int_length)
+    build = []
+    for line in str.split("\n"):
+        int_length = int(length)
+        if int_length != int_length: return line
+        if len(line) == int_length:
+            build.append(line)
+        elif len(line) > int_length:
+            build.append(line[:int_length])
+        else:
+            build.append(line.ljust(int_length))
+    return "\n".join(build)
+    
+def center_length(str, length):
+    build = []
+    for line in str.split("\n"):
+        int_length = int(length)
+        if int_length != int_length: return line
+        if len(line) == int_length:
+            build.append(line)
+        elif len(line) > int_length:
+            build.append(line[:int_length])
+        else:
+            len_left = ((int_length - len(line)) // 2)
+            len_right = int_length - len(line) - len_left
+            build.append(len_left * " " + line + len_right * " ")
+    return "\n".join(build)
 
 processing_funcs = {
-    "length": enforce_length
+    "length": enforce_length,
+    "length_centered": center_length
 }
 
 def generate_view(data):
@@ -113,51 +132,50 @@ def generate_view(data):
             else:
                 content = curr_match[1]
                 args = re.split(r"\|", curr_match[2])
-                color_prop = args[0]
-
-                if color_prop not in color_props: break
-                prop_data = color_props[color_prop]
-
-                preprocess = []
-                if len(args) > 1:
-                    for arg in args:
-                        parts = re.split("=", arg, 1)
-                        if len(parts) != 2: continue
-                        if parts[0] in processing_funcs:
-                            preprocess.append(lambda str : processing_funcs["length"](str, parts[1]))
                 
-                for fxn in preprocess:
-                    content = fxn(content)
+                preprocess = []
+                prop_data = None
+                for arg in args:
+                    parts = re.split("=", arg.lower(), 1)
+                    if len(parts) != 2: continue
+                    if parts[0] == "color":
+                        if parts[1] in color_props: prop_data = color_props[parts[1]]
+                    elif parts[0] in processing_funcs:
+                        preprocess.append(lambda str : processing_funcs[parts[0]](str, parts[1]))
 
-                if prop_data["function"] == "rgbprint": values = [content]
-                else: values = [*content]
-
-                start_offset = output.tell()
-                animated = False
-                if prop_data["function"] == "gradient_change" or prop_data["function"] == "gradient_scroll":
-                    prop_data["options"]["delay"] = 0
-                    prop_data["options"]["times"] = 1
-                    animated = True
-                getattr(rgbprint, prop_data["function"])(*values, **prop_data["options"], sep="", end="")
-
-                output.seek(start_offset)
-                str_output = output.read()
-
-                if animated:
-                    frames = str_output.split("\r")
-                    str_output = curr_match[0]
-                    print_cache[curr_match[0]] = {
-                        "replacement": f"[|[({frames[0]})]|]",
-                        "frames": frames,
-                        "current_frame": 0,
-                        "last_use": data["Run Time"],
-                        "rate": prop_data["rate_multiplier"]
-                    }
+                for fxn in preprocess: content = fxn(content)
+                if prop_data == None:
+                    str_output = content
                 else:
-                    print_cache[curr_match[0]] = {
-                        "replacement": str_output,
-                        "last_use": data["Run Time"]
-                    }
+                    if prop_data["function"] == "rgbprint": values = [content]
+                    else: values = [*content]
+
+                    start_offset = output.tell()
+                    animated = False
+                    if prop_data["function"] == "gradient_change" or prop_data["function"] == "gradient_scroll":
+                        prop_data["options"]["delay"] = 0
+                        prop_data["options"]["times"] = 1
+                        animated = True
+                    getattr(rgbprint, prop_data["function"])(*values, **prop_data["options"], sep="", end="")
+
+                    output.seek(start_offset)
+                    str_output = output.read()
+
+                    if animated:
+                        frames = str_output.split("\r")
+                        str_output = curr_match[0]
+                        print_cache[curr_match[0]] = {
+                            "replacement": f"[|[({frames[0]})]|]",
+                            "frames": frames,
+                            "current_frame": 0,
+                            "last_use": data["Run Time"],
+                            "rate": prop_data["rate_multiplier"]
+                        }
+                    else:
+                        print_cache[curr_match[0]] = {
+                            "replacement": str_output,
+                            "last_use": data["Run Time"]
+                        }
             result = re.sub(regex, str_output, result, 1)
             curr_match = re.search(regex, result)
     sys.stdout = real_stdout
@@ -754,9 +772,12 @@ while True:
                     if "Invalid" in cleaned_line:
                         print(cleaned_line)
                         continue
+                    if "discord.gg" in cleaned_line:
+                        split = re.split("discord.gg/mewt - v", cleaned_line)
+                        if len(split) == 2: name_to_num["Version"] = split[1].strip()
                     if ":" in cleaned_line:
                         split = re.split(r"> |: ", cleaned_line)
-                        if len(split) == 3: name_to_num[split[1]] = split[2]
+                        if len(split) == 3: name_to_num[split[1]] = split[2].strip()
                     if "Current User" in cleaned_line: continue
                     if "Watching" in cleaned_line:
                         if stage == 1:

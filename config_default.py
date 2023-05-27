@@ -1,4 +1,4 @@
-# Up-to-date with 3.5.1
+# Up-to-date with 3.5.6
 # Created by Revive#8798
 
 # If minutes_per_restart is positive, the program will periodically restart every  
@@ -56,15 +56,19 @@ color_props = {
 fps = 5
 
 # You can edit the template below.
-# Single brackets enclose single-line color rules i.e. [ ... ][color_prop]
-# Triple brackets enclose multi-line color rules i.e. [[[ ... ]]][color_prop]
+# Single brackets enclose single-line color rules i.e. [ ... ][color=color_prop]
+# Triple brackets enclose multi-line color rules i.e. [[[ ... ]]][color=color_prop]
 # Do not put more color rules within the brackets of an animated rule (scroll/change)
 # color_prop is a key from color_props above (e.g. one_color, multi_color)
-# You can have just [color_prop] or also [color_prop|length=#], which means the actual length
-#       will be enforced to # by either adding spaces or truncating excess characters
+# You can have just [color=color_prop] or:
+#       [color=color_prop|length=#] - the actual length will be enforced to # by either adding spaces or truncating excess characters
+#       [color=color_prop|length_centered=#] - the text will be centered within a total width of # (make this the
+#                                              maximum width of the whole template including spaces on both ends)
+#                                              (do not add your own whitespace on this line. the line will be formatted automatically)
+#       Or just [length=#] or [length_centered=#]
 # Placeholders for metrics go in double curly braces i.e. {{...}}
-# - Available metrics: Current User, Bought, Autosearch, Errors, Latency, Checks,
-#                      Restarts, Run Time, Watching
+# - Available metrics: Version, Current User, Online Users, Bought, Last Bought, Enabled (for autosearch),
+#                      Errors, Latency, Checks, Restarts, Run Time, Watching
 # Design your whitespace as if the bracket notation doesn't exist. 
 # Template starts on the line after the next line.
 template = """[[[
@@ -74,22 +78,24 @@ template = """[[[
         88P'`?8P'?8b d8b_,dP d88  d8P' d8P'  88P
         d88  d88  88P 88b     ?8b ,88b ,88'   88b
         d88' d88'  88b `?888P' `?888P'888P'    `?8b
-]]][multi_color]
 
-                discord.gg/mewt - v3.1.0
+                discord.gg/mewt - v{{Version}}
              github.com/DocRevive/mew-plus
+]]][color=multi_color]
+> Current User: [{{Current User}}][color=one_color]
+> Online Users: [{{Online Users}}][color=one_color]
+> Bought: [{{Bought}}][color=one_color]
+> Last Bought: [{{Last Bought}}][color=one_color]
 
+>> Autosearch
+> Enabled: [{{Enabled}}][color=one_color]
 
-> Current User: [{{Current User}}][one_color]
-> Bought: [{{Bought}}][one_color]
-> Autosearch: [{{Autosearch}}][one_color]
+>> Watcher
+> Errors: [{{Errors}}][color=one_color]
+> Latency: [{{Latency}}][color=one_color]
+> Checks: [{{Checks}}][color=one_color]
 
->> Main
-> Errors: [{{Errors}}][one_color]
-> Latency: [{{Latency}}][one_color]
-> Checks: [{{Checks}}][one_color]
-
-> Restarts: [{{Restarts}}][one_color]
-> Run Time: [{{Run Time}}][one_color]
-> Watching: [{{Watching}}][one_color]
+> Restarts: [{{Restarts}}][color=one_color]
+> Run Time: [{{Run Time}}][color=one_color]
+> Watching: [{{Watching}}][color=one_color]
 """ # Template ends with the line above

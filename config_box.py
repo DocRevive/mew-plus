@@ -1,4 +1,4 @@
-# Up-to-date with 3.5.6
+# Up-to-date with 4.0.0
 # Created by Revive#8798
 
 # If minutes_per_restart is positive, the program will periodically restart every  
@@ -10,7 +10,7 @@ minutes_per_restart = 30
 # token in settings.json. (All optional)
 bot_token = ""
 allowed_users = [""]    # Put the discord IDs or tags of the users (including you) who can use the bot
-roblox_id = ""          # The roblox ID of your main account (for !serials command)
+roblox_id = ""          # The roblox ID of your main account, corresponding with the first cookie in settings.json (For !serials command)
 embed_color = 0xf7b8cf  # 0x and then hex color value
 bot_prefix = "!"        # Goes before every command
 cache_num = 100         # A multiple of 100; number of inventory acccessories to fetch initially. Not necessarily number of limiteds.
@@ -58,7 +58,7 @@ fps = 20
 #                                              (do not add your own whitespace on this line. the line will be formatted automatically)
 #       Or just [length=#] or [length_centered=#]
 # Placeholders for metrics go in double curly braces i.e. {{...}}
-# - Available metrics: Version, Current User, Online Users, Bought, Last Bought, Enabled (for autosearch),
+# - Available metrics: Version, Current User, Online Users, Bought, Last Bought, Connected (for autosearch),
 #                      Errors, Latency, Checks, Restarts, Run Time, Watching
 # Design your whitespace as if the bracket notation doesn't exist. 
 # Template starts on the line after the next line.
@@ -77,7 +77,7 @@ github.com/DocRevive/mew-plus]]][color=multi_color|length_centered=63]
     ║ Online Users: [{{Online Users}}][color=one_color|length=11] Latency: [{{Latency}}][color=one_color|length=16]║
     ║ Bought: [{{Bought}}][color=one_color|length=17] Checks: [{{Checks}}][color=one_color|length=17]║
     ║ Last Bought: [{{Last Bought}}][color=one_color|length=12] Restarts: [{{Restarts}}][color=one_color|length=15]║
-    ║ Autosearch: [{{Enabled}}][color=one_color|length=13] Run Time: [{{Run Time}}][color=one_color|length=15]║
+    ║ Autosearch: [{{Connected}}][color=one_color|length=13] Run Time: [{{Run Time}}][color=one_color|length=15]║
     ╚════════════════════════════════════════════════════╝
 
     ☆ Watching: [{{Watching}}][color=one_color]

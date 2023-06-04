@@ -1,4 +1,4 @@
-# Up-to-date with 3.5.6
+# Up-to-date with 4.0.0
 # Created by Revive#8798
 
 config_name = "config_default" # name of mew+ config file WITHOUT .py
@@ -224,7 +224,7 @@ def update_settings(new_data):
 def get_request(url, timeout=4, cursor=None):
     try:
         response = requests.get(url if cursor == None else url + f"&cursor={cursor}", timeout=timeout,
-                                cookies={ ".ROBLOSECURITY": settings["MAIN_COOKIE"]})
+                                cookies={ ".ROBLOSECURITY": settings["AUTHENTICATION"]["COOKIES"][0] })
     except Exception as e:
         serials["error"] = str(e)
         print("Couldn't update inventory:", serials["error"])
@@ -517,7 +517,7 @@ def bot_login(token, ready_event):
     )
     async def add(ctx, *args):
         if not user_can_use_bot(ctx.message.author): return
-        message = list_add(settings["ITEMS"], args)
+        message = list_add(settings["MISC"]["WATCHER"]["ITEMS"], args)
         status = update_settings(settings)
         if status: await ctx.reply(message)
         else: await ctx.reply("Error! " + status[1])
@@ -528,7 +528,7 @@ def bot_login(token, ready_event):
     )
     async def remove(ctx, *args):
         if not user_can_use_bot(ctx.message.author): return
-        message = list_remove(settings["ITEMS"], args)
+        message = list_remove(settings["MISC"]["WATCHER"]["ITEMS"], args)
         status = update_settings(settings)
         if status: await ctx.reply(message)
         else: await ctx.reply("Error! " + status[1])
@@ -539,7 +539,7 @@ def bot_login(token, ready_event):
     )
     async def addbl(ctx, *args):
         if not user_can_use_bot(ctx.message.author): return
-        message = list_add(settings["BLACKLIST"], args)
+        message = list_add(settings["MISC"]["WATCHER"]["BLACKLIST"], args)
         status = update_settings(settings)
         if status: await ctx.reply(message)
         else: await ctx.reply("Error! " + status[1])
@@ -550,7 +550,7 @@ def bot_login(token, ready_event):
     )
     async def removebl(ctx, *args):
         if not user_can_use_bot(ctx.message.author): return
-        message = list_remove(settings["BLACKLIST"], args)
+        message = list_remove(settings["MISC"]["WATCHER"]["BLACKLIST"], args)
         status = update_settings(settings)
         if status: await ctx.reply(message)
         else: await ctx.reply("Error! " + status[1])
@@ -561,10 +561,10 @@ def bot_login(token, ready_event):
     )
     async def watching(ctx):
         if not user_can_use_bot(ctx.message.author): return
-        if len(settings["ITEMS"]) == 0:
+        if len(settings["MISC"]["WATCHER"]["ITEMS"]) == 0:
             await ctx.reply("No items watched")
             return
-        await ctx.reply(", ".join(map(str, settings["ITEMS"])))
+        await ctx.reply(", ".join(map(str, settings["MISC"]["WATCHER"]["ITEMS"])))
 
     @bot.command(
         brief="Restarts the program",
@@ -588,10 +588,10 @@ def bot_login(token, ready_event):
     async def speed(ctx, *args):
         if not user_can_use_bot(ctx.message.author): return
         if len(args) == 0:
-            await ctx.reply(str(settings["MISC"]["SCAN_SPEED"]))
+            await ctx.reply(str(settings["MISC"]["WATCHER"]["SCAN_SPEED"]))
         else:
             if "".join(args[0].split(".", 1)).isnumeric():
-                settings["MISC"]["SCAN_SPEED"] = float(args[0])
+                settings["MISC"]["WATCHER"]["SCAN_SPEED"] = float(args[0])
                 status = update_settings(settings)
                 if status: await ctx.reply(f"Speed set to {args[0]}. Use !restart to put changes into effect")
                 else: await ctx.reply("Could not update settings.json! " + status[1])
@@ -599,13 +599,47 @@ def bot_login(token, ready_event):
                 await ctx.reply("Argument must be a number.")
 
     @bot.command(
-        brief="View or change whether to buy only free",
-        help="To view, use without arguments. To change to 'false' (to buy watched paid items), use '!buyonlyfree false'"
+        brief="View or change autosearch buy paid max stock (to buy)",
+        help="To view, use without arguments. To change to 5, for example, use '!auto_buypaid_maxstock 5'"
     )
-    async def buyonlyfree(ctx, *args):
+    async def auto_buypaid_maxstock(ctx, *args):
         if not user_can_use_bot(ctx.message.author): return
         if len(args) == 0:
-            await ctx.reply(str(settings["MISC"]["BUY_ONLY_FREE"]))
+            await ctx.reply(str(settings["MISC"]["AUTOSEARCH"]["BUY_PAID"]["MAX_STOCK"]))
+        else:
+            if args[0].isnumeric() and int(args[0]) >= 0:
+                settings["MISC"]["AUTOSEARCH"]["BUY_PAID"]["MAX_STOCK"] = int(args[0])
+                status = update_settings(settings)
+                if status: await ctx.reply(f"Max stock set to {args[0]}. Autosearch buy paid is {'enabled.' if settings['MISC']['AUTOSEARCH']['BUY_PAID']['ENABLE'] else 'DISABLED!'} View or change other 'buy paid' settings with !auto_buypaid_enabled, !auto_buypaid_maxprice. Use !restart to put changes into effect")
+                else: await ctx.reply("Could not update settings.json! " + status[1])
+            else:
+                await ctx.reply("Argument must be a whole number.")
+
+    @bot.command(
+        brief="View or change autosearch buy paid max price",
+        help="To view, use without arguments. To change to 200, for example, use '!auto_buypaid_maxprice 200'"
+    )
+    async def auto_buypaid_maxprice(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
+        if len(args) == 0:
+            await ctx.reply(str(settings["MISC"]["AUTOSEARCH"]["BUY_PAID"]["MAX_PRICE"]))
+        else:
+            if args[0].isnumeric() and int(args[0]) >= 0:
+                settings["MISC"]["AUTOSEARCH"]["BUY_PAID"]["MAX_PRICE"] = int(args[0])
+                status = update_settings(settings)
+                if status: await ctx.reply(f"Max price set to {args[0]}. Autosearch buy paid is {'enabled.' if settings['MISC']['AUTOSEARCH']['BUY_PAID']['ENABLE'] else 'DISABLED!'} View or change other 'buy paid' settings with !auto_buypaid_enabled, !auto_buypaid_maxprice. Use !restart to put changes into effect")
+                else: await ctx.reply("Could not update settings.json! " + status[1])
+            else:
+                await ctx.reply("Argument must be a whole number.")
+
+    @bot.command(
+        brief="View or change whether to buy only free",
+        help="To view, use without arguments. To change to 'false' (to buy watched paid items), use '!watcher_onlyfree false'"
+    )
+    async def watcher_onlyfree(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
+        if len(args) == 0:
+            await ctx.reply(str(settings["MISC"]["WATCHER"]["ONLY_FREE"]))
         else:
             lower = args[0].lower()
             if lower == "false" or lower == "no":
@@ -616,14 +650,62 @@ def bot_login(token, ready_event):
                 await ctx.reply("Try using 'true' or 'false'")
                 return
 
-            settings["MISC"]["BUY_ONLY_FREE"] = setting
+            settings["MISC"]["WATCHER"]["ONLY_FREE"] = setting
 
             status = update_settings(settings)
             if status:
                 if setting: await ctx.reply(f"Set to 'true', meaning only free items can be bought. Use !restart to put changes into effect")
                 else: await ctx.reply(f"Set to 'false', meaning paid items can be bought. Use !restart to put changes into effect")
             else: await ctx.reply("Could not update settings.json! " + status[1])
+
+    @bot.command(
+        brief="View or change whether autosearch 'buy paid' is enabled",
+        help="To view, use without arguments. To change to 'false' (to buy autosearched paid items), use '!auto_buypaid_enabled false'"
+    )
+    async def auto_buypaid_enabled(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
+        if len(args) == 0:
+            await ctx.reply(str(settings["MISC"]["AUTOSEARCH"]["BUY_PAID"]["ENABLE"]))
+        else:
+            lower = args[0].lower()
+            if lower == "false" or lower == "no":
+                setting = False
+            elif lower == "true" or lower == "yes":
+                setting = True
+            else:
+                await ctx.reply("Try using 'true' or 'false'")
+                return
+
+            settings["MISC"]["AUTOSEARCH"]["BUY_PAID"]["ENABLE"] = setting
+
+            status = update_settings(settings)
+            if status:
+                if setting: await ctx.reply(f"Set to 'true', meaning autosearch can buy paid items. View or change other 'buy paid' settings with !auto_buypaid_maxstock, !auto_buypaid_maxprice. Use !restart to put changes into effect")
+                else: await ctx.reply(f"Set to 'false', meaning autosearch buys only free items. View or change other 'buy paid' settings with !auto_buypaid_maxstock, !auto_buypaid_maxprice. Use !restart to put changes into effect")
+            else: await ctx.reply("Could not update settings.json! " + status[1])
     
+    @bot.command(
+        brief="Adds IDs to autosearch creator whitelist",
+        help="Adds space-separated IDs to autosearch creator whitelist"
+    )
+    async def addcreators(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
+        message = list_add(settings["MISC"]["AUTOSEARCH"]["WHITELISTED_CREATORS"], args)
+        status = update_settings(settings)
+        if status: await ctx.reply(message)
+        else: await ctx.reply("Error! " + status[1])
+
+    @bot.command(
+        brief="Removes IDs from autosearch creator whitelist",
+        help="Removes space-separated IDs from autosearch creator whitelist"
+    )
+    async def removecreators(ctx, *args):
+        if not user_can_use_bot(ctx.message.author): return
+        message = list_remove(settings["MISC"]["AUTOSEARCH"]["WHITELISTED_CREATORS"], args)
+        status = update_settings(settings)
+        if status: await ctx.reply(message)
+        else: await ctx.reply("Error! " + status[1])
+
     bot.run(token)
 
 class FrameThread(threading.Thread):
@@ -722,7 +804,7 @@ try:
     else:
         print("Fetching inventory data, please wait... (one-time setup; restarting remains fast)")
         if not populate_inventory_cache(wait=1, max_retry=8, print=True):
-            print("Got an error; ensure your MAIN_COOKIE is valid and the roblox_id corresponds with the account of the cookie")
+            print("Got an error; ensure your MAIN_COOKIE is valid and the roblox_id corresponds with the account of the FIRST cookie listed in settings.json")
             sys.exit(1)
         serials_thread = threading.Thread(target=check_inventory_loop, daemon=True)
         serials_thread.start()
@@ -765,11 +847,7 @@ while True:
                 cleaned_line = re.sub(color_regex, "", utf_line)
 
                 if len(cleaned_line) != 0:
-                    if "Buying" in cleaned_line:
-                        print(cleaned_line)
-                        serials["last_bought_needs_update"] = current_time
-                        continue
-                    if "Invalid" in cleaned_line:
+                    if "Invalid" in cleaned_line or "Ratelimited" in cleaned_line:
                         print(cleaned_line)
                         continue
                     if "discord.gg" in cleaned_line:
@@ -778,6 +856,10 @@ while True:
                     if ":" in cleaned_line:
                         split = re.split(r"> |: ", cleaned_line)
                         if len(split) == 3: name_to_num[split[1]] = split[2].strip()
+                    elif "Bought" in cleaned_line:
+                        print(cleaned_line)
+                        serials["last_bought_needs_update"] = current_time
+                        continue
                     if "Current User" in cleaned_line: continue
                     if "Watching" in cleaned_line:
                         if stage == 1:

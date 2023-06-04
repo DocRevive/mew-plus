@@ -1,3 +1,5 @@
+## You must have a main.py file and a settings.json format up-to-date with version 4.0.0!
+
 # mew-plus
 An efficient, robust, feature-packed, practical, creative, and customizable overhaul of mewt.
 
@@ -20,19 +22,24 @@ Nothing other than mewt dependencies
 
 ## Commands
 ```
-add         Starts watching ID(s)
-addbl       Blacklists ID(s)
-buyonlyfree View or change whether to buy only free
-help        Shows this message
-inventory   Lists your limiteds and serials
-remove      Stops watching ID(s)
-removebl    Un-blacklists ID(s)
-restart     Restarts the program
-speed       View or change speed
-stats       Shows status and metrics
-stats all   Shows all data
-updateinv   Inventory already auto-updates, but you can use this too
-watching    Shows the list of item IDs
+add                   Starts watching ID(s)
+addbl                 Blacklists ID(s)
+addcreators           Adds IDs to autosearch creator whitelist
+auto_buypaid_enabled  View or change whether autosearch 'buy paid' is enabled
+auto_buypaid_maxprice View or change autosearch buy paid max price
+auto_buypaid_maxstock View or change autosearch buy paid max stock (to buy)
+help                  Shows this message
+inventory             Lists your limiteds and serials
+remove                Stops watching ID(s)
+removebl              Un-blacklists ID(s)
+removecreators        Removes IDs from autosearch creator whitelist
+restart               Restarts the program
+speed                 View or change speed
+stats                 Shows status and metrics
+stats all             Shows all data
+updateinv             Inventory already auto-updates, but you can use this too
+watcher_onlyfree      View or change whether to buy only free
+watching              Shows the list of item IDs
 ```
 
 ## Setup

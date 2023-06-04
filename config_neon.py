@@ -1,4 +1,4 @@
-# Up-to-date with 3.5.6
+# Up-to-date with 4.0.0
 # Created by Revive#8798
 
 # If minutes_per_restart is positive, the program will periodically restart every  
@@ -10,7 +10,7 @@ minutes_per_restart = 30
 # token in settings.json. (All optional)
 bot_token = ""
 allowed_users = [""]    # Put the discord IDs or tags of the users (including you) who can use the bot
-roblox_id = ""          # The roblox ID of your main account (for !serials command)
+roblox_id = ""          # The roblox ID of your main account, corresponding with the first cookie in settings.json (For !serials command)
 embed_color = 0xA653F5  # 0x and then hex color value
 bot_prefix = "!"        # Goes before every command
 cache_num = 100         # A multiple of 100; number of inventory acccessories to fetch initially. Not necessarily number of limiteds.
@@ -73,7 +73,7 @@ fps = 20
 #                                              (do not add your own whitespace on this line. the line will be formatted automatically)
 #       Or just [length=#] or [length_centered=#]
 # Placeholders for metrics go in double curly braces i.e. {{...}}
-# - Available metrics: Version, Current User, Online Users, Bought, Last Bought, Enabled (for autosearch),
+# - Available metrics: Version, Current User, Online Users, Bought, Last Bought, Connected (for autosearch),
 #                      Errors, Latency, Checks, Restarts, Run Time, Watching
 # Design your whitespace as if the bracket notation doesn't exist. 
 # Template starts on the line after the next line.
@@ -93,7 +93,7 @@ template = """[[[
             [Online Users:][color=main_gradient] [{{Online Users}}][color=pink]
            [Bought:][color=main_gradient] [{{Bought}}][color=pink]
           [Last Bought:][color=main_gradient] [{{Last Bought}}][color=pink]
-         [Autosearch:][color=main_gradient] [{{Enabled}}][color=pink]
+         [Autosearch:][color=main_gradient] [{{Connected}}][color=pink]
         [═══════════════════════════════][color=gray]
        [Errors:][color=main_gradient] [{{Errors}}][color=pink]           
       [Latency:][color=main_gradient] [{{Latency}}][color=pink]

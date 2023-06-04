@@ -223,8 +223,12 @@ def update_settings(new_data):
 
 def get_request(url, timeout=4, cursor=None):
     try:
+        if isinstance(settings["AUTHENTICATION"]["COOKIES"], str):
+            print("Line 5 in settings.json should look like this: \"COOKIES\": [\"your cookie\"],")
+            sys.exit(0)
+        cookie = settings["AUTHENTICATION"]["COOKIES"][0]
         response = requests.get(url if cursor == None else url + f"&cursor={cursor}", timeout=timeout,
-                                cookies={ ".ROBLOSECURITY": settings["AUTHENTICATION"]["COOKIES"][0] })
+                                cookies={ ".ROBLOSECURITY": cookie })
     except Exception as e:
         serials["error"] = str(e)
         print("Couldn't update inventory:", serials["error"])
@@ -804,7 +808,7 @@ try:
     else:
         print("Fetching inventory data, please wait... (one-time setup; restarting remains fast)")
         if not populate_inventory_cache(wait=1, max_retry=8, print=True):
-            print("Got an error; ensure your MAIN_COOKIE is valid and the roblox_id corresponds with the account of the FIRST cookie listed in settings.json")
+            print("Got an error; ensure the first cookie in COOKIES is valid and the theme's roblox_id corresponds with the account of the FIRST cookie listed in settings.json")
             sys.exit(1)
         serials_thread = threading.Thread(target=check_inventory_loop, daemon=True)
         serials_thread.start()
